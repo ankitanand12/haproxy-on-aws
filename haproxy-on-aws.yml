@@ -33,7 +33,7 @@
    - name: Wait for SSH to come up
      delegate_to: "{{ item.public_ip }}"
      wait_for_connection:
-        delay: 100
+        delay: 60
         timeout: 320
      loop: "{{ lb.instances }}"
 
@@ -63,7 +63,7 @@
    - name: Wait for SSH to come up
      delegate_to: "{{ item.public_ip }}"
      wait_for_connection:
-        delay: 100
+        delay: 60
         timeout: 320
      loop: "{{ web.instances }}"
 
