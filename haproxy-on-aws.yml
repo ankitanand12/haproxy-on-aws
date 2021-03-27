@@ -1,0 +1,110 @@
+- hosts: localhost
+  vars_files:
+          - awsid.yml
+  tasks:
+   - pip:
+       name: boto3
+       state: present
+     notify: Launch AWS instance
+
+   - name: Launch AWS instance for lb
+     ec2:
+       aws_access_key: "{{ accesskey }}"
+       aws_secret_key: "{{ secretkey }}"
+       image: ami-08f63db601b82ff5f
+       wait: yes
+       count: 1
+       instance_tags:
+               env: load-balancer
+       instance_type: t2.micro
+       key_name: my-key
+       group_id: sg-0246b21430258f274
+       assign_public_ip: yes
+       region: ap-south-1
+       vpc_subnet_id: subnet-580c3630
+     register: lb
+
+   - name: Add new instance to host group
+     add_host:
+       hostname: "{{ item.public_ip }}"
+       groupname: load
+     loop: "{{ lb.instances }}"
+
+   - name: Wait for SSH to come up
+     delegate_to: "{{ item.public_ip }}"
+     wait_for_connection:
+        delay: 100
+        timeout: 320
+     loop: "{{ lb.instances }}"
+
+   - name: Launch AWS instance for webserver
+     ec2:
+       aws_access_key: "{{ accesskey }}"
+       aws_secret_key: "{{ secretkey }}"
+       image: ami-08f63db601b82ff5f
+       wait: yes
+       count: 2
+       instance_tags:
+               env: web-server
+       instance_type: t2.micro
+       key_name: my-key
+       assign_public_ip: yes
+       group_id: sg-0246b21430258f274
+       region: ap-south-1
+       vpc_subnet_id: subnet-580c3630
+     register: web
+
+   - name: Add new instance to host group
+     add_host:
+       hostname: "{{ item.public_ip }}"
+       groupname: web
+     loop: "{{ web.instances }}"
+
+   - name: Wait for SSH to come up
+     delegate_to: "{{ item.public_ip }}"
+     wait_for_connection:
+        delay: 100
+        timeout: 320
+     loop: "{{ web.instances }}"
+
+- hosts: web
+  tasks:
+    - name: Installing httpd
+      package:
+        name: httpd
+        state: present
+
+    - name: Installing php
+      package:
+        name: php
+        state: present
+
+    - name: Copying web page
+      template:
+        src: index.php
+        dest: /var/www/html
+
+    - name: Starting httpd service
+      service:
+        name: httpd
+        state: restarted
+
+- hosts: load
+  tasks:
+    - name: Installing haproxy
+      package:
+        name: haproxy
+        state: present
+
+    - name: Configuring haproxy
+      template:
+        src: haproxy.cfg.j2
+        dest: /etc/haproxy/haproxy.cfg
+
+    - name: Starting haproxy
+      service:
+        name: haproxy
+        state: restarted
+
+
+
