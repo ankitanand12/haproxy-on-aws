@@ -1,4 +1,4 @@
-:boom: :dizzy:
+:boom: :dizzy: :sparkles:
 ## Ansible playbook to Configure Reverse Proxy on AWS ##
 _i.e. Haproxy and update it's configuration_
 _file automatically on each time new Managed node_
