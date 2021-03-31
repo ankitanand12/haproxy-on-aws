@@ -9,4 +9,4 @@ _(Configured With Apache Webserver) with dynamic inventory._ :sunglasses:
 ### For Access key ### 
 __accesskey__
 ### for Secret key ###
-__secreakey__
+__secretkey__
